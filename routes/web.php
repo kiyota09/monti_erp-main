@@ -67,6 +67,9 @@ Route::prefix('dashboard/hrm')->name('hrm.')->middleware(['auth', 'verified'])->
     Route::get('/interview', [InterviewController::class, 'interview'])
         ->middleware(['role:HRM', 'position:staff'])
         ->name('employee.interview');
+        
+    Route::post('/InterviewController/update-status', [InterviewController::class, 'submitStatus'])
+        ->middleware(['role:HRM', 'position:staff']);
 
     // Inside the hrm prefix group...
     Route::post('/interview/{interview}/evaluate', [InterviewController::class, 'updateStatus'])
@@ -77,11 +80,6 @@ Route::prefix('dashboard/hrm')->name('hrm.')->middleware(['auth', 'verified'])->
     Route::post('/interview/{interview}/reschedule', [InterviewController::class, 'reschedule'])
         ->middleware(['role:HRM', 'position:staff'])
         ->name('employee.interview.reschedule');
-        
-    Route::post('/InterviewController/update-status', [InterviewController::class, 'submitStatus']);
-
-
-
 
     // --- HRM Manager Routes ---
     Route::get('/manager', [DashboardController::class, 'index'])
@@ -101,7 +99,7 @@ Route::prefix('dashboard/hrm')->name('hrm.')->middleware(['auth', 'verified'])->
         Route::post('/applicants/{applicant}/schedule', 'scheduleInterview')
             ->middleware(['role:HRM', 'position:manager,staff'])
             ->name('applicants.schedule');
-        });
+    });
 
 
 
@@ -117,6 +115,7 @@ Route::prefix('dashboard/hrm')->name('hrm.')->middleware(['auth', 'verified'])->
         ->middleware(['role:HRM', 'position:manager'])
         ->name('manager.analytics');
 });
+
 
 /*
 |--------------------------------------------------------------------------
@@ -160,7 +159,6 @@ Route::prefix('dashboard/scm')->name('scm.')->middleware(['auth', 'verified'])->
     Route::get('/verification', [VerificationController::class, 'verification'])
         ->middleware(['role:SCM', 'position:staff'])
         ->name('employee.verification');
-
 });
 
 /*
@@ -246,4 +244,4 @@ Route::prefix('dashboard/eco')->name('eco.')->middleware(['auth', 'verified'])->
         ->name('employee.dashboard');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

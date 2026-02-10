@@ -5,7 +5,8 @@ import { ref, computed } from 'vue'
 import {
     Calendar, Clock, Video, MapPin, XCircle, ClipboardList,
     ExternalLink, PlayCircle, CalendarClock, CheckCircle2,
-    Eye, Edit3, User, Mail, Phone, Briefcase , CheckCheck
+    Eye, Edit3, User, Mail, Phone, Briefcase , CheckCheck ,
+    Send
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -31,7 +32,7 @@ const selectedInterview = ref(null)
 //     });
 // }
 function submitStatus(item) {
-    router.post('/InterviewController/update-status', {
+    router.post('InterviewController/update-status', {
         id: item.id,
         status: 'onboard' // Hardcoding here instead of mutating the item immediately
     }, {
@@ -44,7 +45,7 @@ function submitStatus(item) {
     });
 }
 
- 
+
 const form = useForm({
     notes: '',
     status: 'Pending',  
@@ -344,10 +345,14 @@ const getInterviewTypeIcon = (type) => {
                                             class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
                                             <ExternalLink class="h-4 w-4" />
                                         </button>
+                                        <button @click="followupBtn(evalItem)"
+                                            class="ml-2 px-3 py-1 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-blue-700 transition-all">    
+                                            <Send class="h-4 w-4" />
+                                        </button>
                                         <button @click="submitStatus(evalItem)"
                                             class="ml-2 px-3 py-1 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-600 transition-all">    
                                             <CheckCheck class="h-4 w-4" />
-                                            <!-- {{ evalItem }} -->
+                                            {{ evalItem }}
                                         </button>
                                     </td>
                                 </tr>
