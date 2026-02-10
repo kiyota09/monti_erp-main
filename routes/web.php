@@ -1,0 +1,249 @@
+<?php
+
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\hrm\employee\AttendanceController;
+use App\Http\Controllers\hrm\employee\InterviewController;
+use App\Http\Controllers\hrm\employee\LeaveController;
+use App\Http\Controllers\hrm\employee\TrainingController;
+use App\Http\Controllers\hrm\manager\AnalyticsController;
+use App\Http\Controllers\hrm\manager\ApplicantController;
+use App\Http\Controllers\hrm\manager\OnboardingController;
+use App\Http\Controllers\hrm\manager\PayrollController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\scm\employee\InboundController;
+use App\Http\Controllers\scm\employee\InventoryController;
+use App\Http\Controllers\scm\employee\RecievingController;
+use App\Http\Controllers\scm\employee\VerificationController;
+use App\Http\Controllers\scm\manager\AuditController;
+use App\Http\Controllers\scm\manager\CloseController;
+use App\Http\Controllers\scm\manager\SourcingController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/', function () {
+    return inertia('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'laravelVersion' => app()->version(),
+        'phpVersion' => PHP_VERSION,
+    ]);
+});
+
+Route::middleware(['auth'])->group(function () {
+    // The main entry point that redirects based on user role/position
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+});
+
+/*
+|--------------------------------------------------------------------------
+| HRM Department Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('dashboard/hrm')->name('hrm.')->middleware(['auth', 'verified'])->group(function () {
+
+    // Pointing to consolidated index logic for HRM Staff
+    Route::get('/employee', [DashboardController::class, 'index'])
+        ->middleware(['role:HRM', 'position:staff'])
+        ->name('employee.dashboard');
+
+    Route::get('/training', [TrainingController::class, 'training'])
+        ->middleware(['role:HRM', 'position:staff'])
+        ->name('employee.training');
+
+    Route::get('/leave', [LeaveController::class, 'leave'])
+        ->middleware(['role:HRM', 'position:staff'])
+        ->name('employee.leave');
+
+    Route::get('/attendance', [AttendanceController::class, 'attendance'])
+        ->middleware(['role:HRM', 'position:staff'])
+        ->name('employee.attendance');
+
+    Route::get('/interview', [InterviewController::class, 'interview'])
+        ->middleware(['role:HRM', 'position:staff'])
+        ->name('employee.interview');
+
+    // Inside the hrm prefix group...
+    Route::post('/interview/{interview}/evaluate', [InterviewController::class, 'updateStatus'])
+        ->middleware(['role:HRM', 'position:staff'])
+        ->name('employee.interview.evaluate');
+
+    // Inside your hrm prefix and employee/staff middleware group:
+    Route::post('/interview/{interview}/reschedule', [InterviewController::class, 'reschedule'])
+        ->middleware(['role:HRM', 'position:staff'])
+        ->name('employee.interview.reschedule');
+        
+    Route::post('/InterviewController/update-status', [InterviewController::class, 'submitStatus']);
+
+
+
+
+    // --- HRM Manager Routes ---
+    Route::get('/manager', [DashboardController::class, 'index'])
+        ->middleware(['role:HRM', 'position:manager'])
+        ->name('manager.dashboard');
+
+    // Updated Applicant Routes
+    Route::controller(ApplicantController::class)->group(function () {
+        Route::get('/applicants', 'index')
+            ->middleware(['role:HRM', 'position:manager,staff'])
+            ->name('applicants.index');
+
+        Route::post('/applicants', 'store')
+            ->middleware(['role:HRM', 'position:manager,staff'])
+            ->name('applicants.store');
+
+        Route::post('/applicants/{applicant}/schedule', 'scheduleInterview')
+            ->middleware(['role:HRM', 'position:manager,staff'])
+            ->name('applicants.schedule');
+        });
+
+
+
+    Route::get('/onboarding', [OnboardingController::class, 'onboarding'])
+        ->middleware(['role:HRM', 'position:manager'])
+        ->name('manager.onboarding');
+
+    Route::get('/payroll', [PayrollController::class, 'payroll'])
+        ->middleware(['role:HRM', 'position:manager'])
+        ->name('manager.payroll');
+
+    Route::get('/analytics', [AnalyticsController::class, 'analytics'])
+        ->middleware(['role:HRM', 'position:manager'])
+        ->name('manager.analytics');
+});
+
+/*
+|--------------------------------------------------------------------------
+| SCM Department Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('dashboard/scm')->name('scm.')->middleware(['auth', 'verified'])->group(function () {
+
+    Route::get('/manager', [DashboardController::class, 'index'])
+        ->middleware(['role:SCM', 'position:manager'])
+        ->name('manager.dashboard');
+
+    Route::get('/sourcing', [SourcingController::class, 'sourcing'])
+        ->middleware(['role:SCM', 'position:manager'])
+        ->name('manager.sourcing');
+
+    Route::get('/audit', [AuditController::class, 'audit'])
+        ->middleware(['role:SCM', 'position:manager'])
+        ->name('manager.audit');
+
+    Route::get('/close', [CloseController::class, 'close'])
+        ->middleware(['role:SCM', 'position:manager'])
+        ->name('manager.close');
+
+    Route::get('/staff', [DashboardController::class, 'index'])
+        ->middleware(['role:SCM', 'position:staff'])
+        ->name('employee.dashboard');
+
+    Route::get('/inbound', [InboundController::class, 'inbound'])
+        ->middleware(['role:SCM', 'position:staff'])
+        ->name('employee.inbound');
+
+    Route::get('/inventory', [InventoryController::class, 'inventory'])
+        ->middleware(['role:SCM', 'position:staff'])
+        ->name('employee.inventory');
+
+    Route::get('/recieving', [RecievingController::class, 'recieving'])
+        ->middleware(['role:SCM', 'position:staff'])
+        ->name('employee.recieving');
+
+    Route::get('/verification', [VerificationController::class, 'verification'])
+        ->middleware(['role:SCM', 'position:staff'])
+        ->name('employee.verification');
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| Additional Department Dashboards
+|--------------------------------------------------------------------------
+*/
+
+// Finance (FIN) - Fixed named routes
+Route::prefix('dashboard/fin')->name('fin.')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/manager', [DashboardController::class, 'index'])
+        ->middleware(['role:FIN', 'position:manager'])
+        ->name('manager.dashboard');
+
+    Route::get('/staff', [DashboardController::class, 'index'])
+        ->middleware(['role:FIN', 'position:staff'])
+        ->name('employee.dashboard');
+});
+
+// Manufacturing (MAN)
+Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/manager', [DashboardController::class, 'index'])
+        ->middleware(['role:MAN', 'position:manager'])
+        ->name('manager.dashboard');
+
+    Route::get('/staff', [DashboardController::class, 'index'])
+        ->middleware(['role:MAN', 'position:staff'])
+        ->name('employee.dashboard');
+});
+
+// Inventory (INV)
+Route::prefix('dashboard/inv')->name('inv.')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/manager', [DashboardController::class, 'index'])
+        ->middleware(['role:INV', 'position:manager'])
+        ->name('manager.dashboard');
+
+    Route::get('/staff', [DashboardController::class, 'index'])
+        ->middleware(['role:INV', 'position:staff'])
+        ->name('employee.dashboard');
+});
+
+// Order Management (ORD)
+Route::prefix('dashboard/ord')->name('ord.')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/manager', [DashboardController::class, 'index'])
+        ->middleware(['role:ORD', 'position:manager'])
+        ->name('manager.dashboard');
+
+    Route::get('/staff', [DashboardController::class, 'index'])
+        ->middleware(['role:ORD', 'position:staff'])
+        ->name('employee.dashboard');
+});
+
+// Warehouse (WAR)
+Route::prefix('dashboard/war')->name('war.')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/manager', [DashboardController::class, 'index'])
+        ->middleware(['role:WAR', 'position:manager'])
+        ->name('manager.dashboard');
+
+    Route::get('/staff', [DashboardController::class, 'index'])
+        ->middleware(['role:WAR', 'position:staff'])
+        ->name('employee.dashboard');
+});
+
+// CRM
+Route::prefix('dashboard/crm')->name('crm.')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/manager', [DashboardController::class, 'index'])
+        ->middleware(['role:CRM', 'position:manager'])
+        ->name('manager.dashboard');
+
+    Route::get('/staff', [DashboardController::class, 'index'])
+        ->middleware(['role:CRM', 'position:staff'])
+        ->name('employee.dashboard');
+});
+
+// E-Commerce (ECO)
+Route::prefix('dashboard/eco')->name('eco.')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/manager', [DashboardController::class, 'index'])
+        ->middleware(['role:ECO', 'position:manager'])
+        ->name('manager.dashboard');
+
+    Route::get('/staff', [DashboardController::class, 'index'])
+        ->middleware(['role:ECO', 'position:staff'])
+        ->name('employee.dashboard');
+});
+
+require __DIR__.'/auth.php';
